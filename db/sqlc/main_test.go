@@ -14,6 +14,7 @@ const (
 	dbSource = "postgresql://root:secret@localhost:5432/xyfin?sslmode=disable"
 )
 
+// contains DBTX
 var testQueries *Queries
 
 
