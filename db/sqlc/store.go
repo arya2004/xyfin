@@ -55,7 +55,7 @@ type TransferTxResult struct {
 	ToEntry     Entry    `json:"to_entry"`
 }
 
-var txKey = struct{}{}
+
 
 // create transfer record, add account entryes, uipdate acc balance
 func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error) {
@@ -66,7 +66,9 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 
 		var err error
 
-		txName := ctx.Value(txKey)
+		
+
+		
 
 		result.Transfer, err = q.CreateTransfer(ctx, CreateTransferParams{
 			FromAccountID: arg.FromAccountId,
@@ -79,7 +81,7 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 		}
 
 
-		fmt.Println(txName, "create Entry 1")
+		
 
 		result.FromEntry, err = q.CreateEntry(ctx, CreateEntryParams{
 			AccountID: arg.FromAccountId,
@@ -90,7 +92,7 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 			return err
 		}
 
-		fmt.Println(txName, "create Entry 2")
+		
 
 		result.ToEntry, err = q.CreateEntry(ctx, CreateEntryParams{
 			AccountID: arg.ToAccountId,
@@ -101,11 +103,42 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 			return err
 		}
 
-		fmt.Println(txName, "Get Account 1 for update")
+		
 
 		//Todo: update Account Balance and avoiding Deadlock
 
 		//get acc from db -> change balance
+		
+
+		
+
+		
+
+		result.FromAccount, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+			ID:      arg.FromAccountId,
+			Amount:  - arg.Amount,
+		})
+
+		if err != nil {
+			return err
+		}
+
+		
+
+
+		
+
+		result.ToAccount, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+			ID:      arg.ToAccountId,
+			Amount:  arg.Amount,
+		})
+
+		if err != nil {
+			return err
+		}
+
+		
+
 
 
 		return nil
