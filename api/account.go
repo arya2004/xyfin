@@ -10,25 +10,21 @@ import (
 
 type createAccountRequest struct {
 	Owner    string `json:"owner" binding:"required"`
-	Currency string `json:"currency" binding:"required,oneof=USD EUR INR"`
+	Currency string `json:"currency" binding:"required,oneof=USD EUR CAD"`
 }
 
-
-func (server *Server) createAccount(ctx *gin.Context){
+func (server *Server) createAccount(ctx *gin.Context) {
 	var req createAccountRequest
-	err := ctx.ShouldBindJSON(&req)
-
-	if err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
 	arg := db.CreateAccountParams{
-		Owner: req.Owner,
+		Owner:    req.Owner,
 		Currency: req.Currency,
-		Balance: 0,
+		Balance:  0,
 	}
-
 
 	account, err := server.store.CreateAccount(ctx, arg)
 	if err != nil {
@@ -39,18 +35,11 @@ func (server *Server) createAccount(ctx *gin.Context){
 	ctx.JSON(http.StatusOK, account)
 }
 
-func (server *Server) helloWorld(ctx *gin.Context){
-	
-
-	ctx.JSON(http.StatusOK, ctx.Request.Method)
-}
-
 type getAccountRequest struct {
 	ID int64 `uri:"id" binding:"required,min=1"`
 }
 
-func (server *Server) getAccount(ctx *gin.Context){
-	
+func (server *Server) getAccount(ctx *gin.Context) {
 	var req getAccountRequest
 	if err := ctx.ShouldBindUri(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
@@ -63,31 +52,26 @@ func (server *Server) getAccount(ctx *gin.Context){
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
 			return
 		}
+
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
-	
-
 	ctx.JSON(http.StatusOK, account)
-	
 }
-
 
 type listAccountRequest struct {
 	PageID   int32 `form:"page_id" binding:"required,min=1"`
 	PageSize int32 `form:"page_size" binding:"required,min=5,max=10"`
 }
 
-func (server *Server) listAccount(ctx *gin.Context) {
+func (server *Server) listAccounts(ctx *gin.Context) {
 	var req listAccountRequest
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
-	
-	
 	arg := db.ListAccountsParams{
 		Limit:  req.PageSize,
 		Offset: (req.PageID - 1) * req.PageSize,
