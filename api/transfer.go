@@ -2,10 +2,12 @@ package api
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 
 	db "github.com/arya2004/xyfin/db/sqlc"
+	"github.com/arya2004/xyfin/token"
 	"github.com/gin-gonic/gin"
 )
 
@@ -24,13 +26,18 @@ func (server *Server) createTransfer(ctx *gin.Context) {
 		return
 	}
 	//
-	_, valid := server.validAccount(ctx, req.FromAccountID, req.Currency)
+	fromAccount, valid := server.validAccount(ctx, req.FromAccountID, req.Currency)
 		
 	if !valid{
 		return
 	}
 
-	
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+	if authPayload.Username != fromAccount.Owner {
+		err := errors.New("from account doenst beelong to authenticated user")
+		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
+		return
+	}
 
 
 	_, valid = server.validAccount(ctx, req.ToAccountID, req.Currency)
