@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package pb;
+
+import "rpc_create_user.proto";
+
+option go_package = "github.com/arya2004/xyfin/pb";
+
+service Xyfin {
+    rpc CreateUser (CreateUserRequest) returns (CreateUserResponse){}
+    
+}
