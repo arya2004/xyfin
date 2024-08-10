@@ -34,10 +34,10 @@ new_migration:
 	migrate create -ext sql -dir db/migration -seq $(name)
 
 db_docs:
-	dbdocs build doc/db.dbml
+	dbdocs build docs/db.dbml
 
 db_schema:
-	dbml2sql --postgres -o doc/schema.sql doc/db.dbml
+	dbml2sql --postgres -o docs/schema.sql docs/db.dbml
 
 sqlc:
 	sqlc generate
