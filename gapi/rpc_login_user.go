@@ -7,6 +7,8 @@ import (
 	db "github.com/arya2004/xyfin/db/sqlc"
 	"github.com/arya2004/xyfin/pb"
 	"github.com/arya2004/xyfin/utils"
+	"github.com/arya2004/xyfin/validators"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -15,7 +17,11 @@ import (
 
 
 func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (*pb.LoginUserResponse, error) {
-	
+	violations := validateLoginUserRequest(req)
+	if violations != nil {
+		return nil, validators.InvalidArgumentError(violations)
+	}
+
 	user, err := server.store.GetUser(ctx, req.GetUsername())
 	if err != nil {
 		if err == sql.ErrNoRows{
@@ -71,4 +77,17 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 		RefreshTokenExpiresAt: timestamppb.New(refreshPayload.ExpiredAt),
 	}
 	return rsp, nil
+}
+
+
+func validateLoginUserRequest(req *pb.LoginUserRequest) (violations []*errdetails.BadRequest_FieldViolation) {
+	if err := validators.ValidateUsername(req.GetUsername()); err != nil {
+		violations = append(violations, validators.FieldViolation("username", err))
+	}
+
+	if err := validators.ValidatePassword(req.GetPassword()); err != nil {
+		violations = append(violations, validators.FieldViolation("password", err))
+	}
+
+	return violations
 }
