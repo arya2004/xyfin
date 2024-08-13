@@ -31,6 +31,7 @@ const (
 
 
 func main() {
+	
 	config, err := utils.LoadConfig(".")
 	if err != nil {
 		log.Fatal("cannot load config", err)
@@ -70,7 +71,10 @@ func runGrpcServer(config utils.Configuration, store db.Store) {
 	if err != nil {
 		log.Fatal("cannot create server", err)
 	}
-	grpcServer := grpc.NewServer()
+
+	grpcLogger := grpc.UnaryInterceptor(gapi.GrpcLogger)
+
+	grpcServer := grpc.NewServer(grpcLogger)
 	pb.RegisterXyfinServer(grpcServer, server)
 	reflection.Register(grpcServer)
 
