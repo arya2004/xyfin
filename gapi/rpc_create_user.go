@@ -29,14 +29,30 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 		return nil, status.Errorf(codes.Internal, "failled to hash -password: %v", err)
 	}
 
-	arg := db.CreateUserParams{
-		FullName: req.GetFullName(),
+	arg := db.CreateUserTxParams{
+		CreateUserParams: db.CreateUserParams{
+			FullName: req.GetFullName(),
 		Email: req.GetEmail(),
 		Username: req.GetUsername(),
 		HashedPassword: hashedPassword,
+		},
+		AfterCreate: func(user db.User) error {
+			taskPayload := &worker.PayloadSendVerifyEmail{
+				Username: user.Username,
+			}
+		
+			opts := []asynq.Option{
+				asynq.MaxRetry(10),
+				asynq.ProcessIn(10 * time.Second),
+				asynq.Queue(worker.QueueCritical),
+			}
+		
+			return server.taskDistributor.SendVerifyEmail(ctx, taskPayload, opts...)
+			
+		},
 	}
 
-	user, err := server.store.CreateUser(ctx, arg)
+	trxResult, err := server.store.CreateUserTx(ctx, arg)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Code.Name() {
@@ -49,25 +65,11 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 
 	}
 
-	taskPayload := &worker.PayloadSendVerifyEmail{
-		Username: user.Username,
-	}
-
-	opts := []asynq.Option{
-		asynq.MaxRetry(10),
-		asynq.ProcessIn(10 * time.Second),
-		asynq.Queue(worker.QueueCritical),
-	}
-
-	err = server.taskDistributor.SendVerifyEmail(ctx, taskPayload, opts...)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failled to distribute task: %v", err)
-
-	}
+	
 
 
 	resp := &pb.CreateUserResponse{
-		User: ConvertUser(user),
+		User: ConvertUser(trxResult.User),
 	}
 	
 	return resp, nil
