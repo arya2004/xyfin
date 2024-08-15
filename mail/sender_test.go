@@ -11,6 +11,10 @@ import (
 
 func TestSendEmailWithGmail(t *testing.T) {	
 
+	if testing.Short() {
+		t.Skip()
+	}
+
 	config, err := utils.LoadConfig("..")
 
 	if err != nil {
@@ -22,7 +26,7 @@ func TestSendEmailWithGmail(t *testing.T) {
 	to := []string{"arya.pathak22@vit.edu"}
 	cc := []string{}
 	bcc := []string{}
-	attachFiles := []string{} // Add file paths if you have attachments
+	attachFiles := []string{"../sqlc.md"} // Add file paths if you have attachments
 
 	data := map[string]string{
 		"Name": "John Doe",

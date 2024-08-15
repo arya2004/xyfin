@@ -6,6 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 
+	db "github.com/arya2004/xyfin/db/sqlc"
+	"github.com/arya2004/xyfin/mail"
+	"github.com/arya2004/xyfin/utils"
 	"github.com/hibiken/asynq"
 	"github.com/rs/zerolog/log"
 )
@@ -54,6 +57,34 @@ func (processor *RedisTaskProcessor)ProcessVerifyEmail(ctx context.Context, task
 	}
 
 	// send email to user.Email
+	verifyEmail, err := processor.store.CreateVerifyEmail(ctx, db.CreateVerifyEmailParams{
+		Username: user.Username,
+		Email: user.Email,
+		SecretCode: utils.RandomString(32),
+	})
+
+	if err != nil {
+		return fmt.Errorf("cannot create verify email: %w", err)
+	}
+
+	config, err := utils.LoadConfig("..")
+
+	if err != nil {
+		fmt.Println("Failed to load config:", err)
+		
+	}
+
+	sender := mail.NewGmailSender("Xphyrus", config.EmailSenderAddress, config.EmailSenderPassword)
+	to := []string{user.Email}
+	
+	data := map[string]string{
+		"Code": verifyEmail.SecretCode,
+	}
+
+	err = sender.SendEmail("Welcome to Our Service!", "./welcome_template.html", to, nil, nil, nil, data)
+	if err != nil {
+		fmt.Println("Failed to send email:", err)
+	}
 	
 	log.Info().Str("type", task.Type()).Bytes("payload", task.Payload()).
 		Str("email", user.Email).Msg("processed task")

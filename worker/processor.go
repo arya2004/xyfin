@@ -15,6 +15,7 @@ const (
 type TaskProcessor interface {
 	Start()	error
 	ProcessVerifyEmail(ctx context.Context, task *asynq.Task) error
+	
 }
 
 type RedisTaskProcessor struct {
