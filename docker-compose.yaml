@@ -8,16 +8,28 @@ services:
       - POSTGRES_DB=xyfin
     healthcheck: 
       test: "exit 0"
+    volumes:
+      - data-volume:/var/lib/postgresql/data
+  redis:
+    image: redis:7-alpine
+    healthcheck: 
+      test: "exit 0"
   api:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
+      - "9090:9090"
     environment:
       - DB_SOURCE=postgresql://root:secret@postgres:5432/xyfin?sslmode=disable
+      - REDIS_ADDRESS=redis:6379
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     links:
       - postgres
+volumes:
+  data-volume:
