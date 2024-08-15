@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xyfin-deployment
+  labels:
+    app: xyfin
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: xyfin
+  template:
+    metadata:
+      labels:
+        app: xyfin
+    spec:
+      containers:
+      - name: xyfin
+        image: zieglernattacatalyst/xyfin:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http-server
+        - containerPort: 9090
+          name: grpc-server
